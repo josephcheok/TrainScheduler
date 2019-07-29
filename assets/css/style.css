@@ -1,0 +1,30 @@
+div.form-group label {
+  padding-top: 8px;
+}
+
+#submissionForm {
+  margin-top: 15px;
+}
+
+#submitButton {
+  float: right;
+  margin: 10px 10px;
+}
+
+.card {
+  margin: 20px 0;
+}
+
+.jumbotron {
+  background-color: brown;
+  color: white;
+}
+
+.card-header {
+  background-color: brown;
+  color: white;
+}
+
+.form-group {
+  margin: 0 10px;
+}
