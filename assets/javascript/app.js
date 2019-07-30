@@ -6,8 +6,8 @@ $(document).ready(function() {
     maxTime: "23:59",
     defaultTime: "00:00",
     dynamic: true,
-    dropdown: true,
-    scrollbar: true
+    dropdown: false,
+    scrollbar: false
   });
 
   console.log("connected");
@@ -37,16 +37,60 @@ $(document).ready(function() {
   $(document).on("click", ".btn-warning", function() {
     console.log(this);
     var recordID = $(this).attr("data-delete");
-    database.ref().remove(recordID);
+    database.ref(recordID).remove();
   });
+
+  function getTimeFromMins(mins) {
+    // do not include the first validation check if you want, for example,
+    // getTimeFromMins(1530) to equal getTimeFromMins(90) (i.e. mins rollover)
+    if (mins >= 24 * 60 || mins < 0) {
+      throw new RangeError(
+        "Valid input should be greater than or equal to 0 and less than 24hrs."
+      );
+    }
+    var h = (mins / 60) | 0,
+      m = mins % 60 | 0;
+    return moment
+      .utc()
+      .hours(h)
+      .minutes(m)
+      .format("HH:mm");
+  }
 
   database.ref().on(
     "child_added",
     function(snap) {
-      console.log(snap.val());
-
+      //defining variable for physical table building
       var table = $("#tableData");
       var row = $("<tr>");
+
+      //defining variable for the time now and start time for claculation
+      var now = moment().format("HH:mm");
+      var then = snap.val().startTime;
+
+      //defining the table data elements
+      var nameTD = "<td>" + snap.val().name + "</td>";
+      var destTD = "<td>" + snap.val().destination + "</td>";
+      var startTimeTD = "<td>" + snap.val().startTime + "</td>";
+      var freqTD = "<td>" + snap.val().frequency + "</td>";
+
+      //calculation of next train arrival time
+      var timeDiffToNow = moment
+        .utc(moment(now, "HH:mm").diff(moment(then, "HH:mm")))
+        .format("HH:mm");
+      var timeDiffToNowInMinutes = moment.duration(timeDiffToNow).asMinutes();
+      var nextArrMultiple =
+        Math.ceil(timeDiffToNowInMinutes / snap.val().frequency) *
+        snap.val().frequency;
+      var nextArr = moment(
+        moment(then, "HH:mm").add(nextArrMultiple, "minutes")
+      ).format("HH:mm");
+      var nextArrTD = "<td>" + nextArr + "</td>";
+
+      //calculation of minutes to wait until train arrives
+      var minAway =
+        snap.val().frequency - (timeDiffToNowInMinutes % snap.val().frequency);
+      var minAwayTD = "<td>" + minAway + "</td>";
 
       // Create delete button
       var delButton = $("<button>");
@@ -54,16 +98,7 @@ $(document).ready(function() {
       delButton.attr("data-delete", snap.ref.key);
       delButton.text("X");
 
-      //   var months = moment().diff(snap.val().startDate, "months");
-      //   var totalBilledAmt = months * parseInt(snap.val().rate);
-
-      var nameTD = "<td>" + snap.val().name + "</td>";
-      var destTD = "<td>" + snap.val().destination + "</td>";
-      var startTimeTD = "<td>" + snap.val().startTime + "</td>";
-      var freqTD = "<td>" + snap.val().frequency + "</td>";
-      var nextArrTD = "<td> Whenever </td>";
-      var minAwayTD = "<td> Soon-ish </td>";
-
+      row.attr("id", snap.ref.key);
       row.append(nameTD);
       row.append(destTD);
       row.append(startTimeTD);
@@ -71,9 +106,13 @@ $(document).ready(function() {
       row.append(nextArrTD);
       row.append(minAwayTD);
       row.append(delButton);
-
       table.append(row);
     },
     function(error) {}
   );
+
+  database.ref().on("child_removed", function(snap) {
+    var recordID = snap.ref.key;
+    $("#" + recordID).remove();
+  });
 });
