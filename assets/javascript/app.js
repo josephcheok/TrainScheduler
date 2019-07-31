@@ -65,7 +65,7 @@ $(document).ready(function() {
       var row = $("<tr>");
 
       //defining variable for the time now and start time for calculation
-      var now = moment().format("HH:mm");
+      var now = moment("2019-07-31T15:17:00").format("HH:mm");
       var then = snap.val().startTime;
 
       //defining the table data elements
@@ -96,7 +96,9 @@ $(document).ready(function() {
       function minAwayZero() {
         if (minAway == snap.val().frequency) {
           textmsg = "Boarding Now";
-          minAwayTD = `<td><span class="blink">${textmsg}</span></td>`;
+          minAwayTD = `<td><span class="${
+            snap.ref.key
+          }">${textmsg}</span></td>`;
         } else {
           textmsg = minAway;
           minAwayTD = `<td>${textmsg}</td>`;
@@ -110,7 +112,7 @@ $(document).ready(function() {
       delButton.attr("data-delete", snap.ref.key);
       delButton.text("X");
 
-      //Appending data onto table by row
+      //Appending data onto table by row and assigning Firebase keyID to the row
       row.attr("id", snap.ref.key);
       row.append(nameTD);
       row.append(destTD);
@@ -122,7 +124,7 @@ $(document).ready(function() {
       table.append(row);
 
       //Blink 'boarding now' msg for trains that have arrived
-      $(".blink").blink({ delay: 500 });
+      $("." + snap.ref.key).blink({ delay: 500 });
     },
     function(error) {}
   );
