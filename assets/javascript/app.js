@@ -64,7 +64,7 @@ $(document).ready(function() {
       var table = $("#tableData");
       var row = $("<tr>");
 
-      //defining variable for the time now and start time for claculation
+      //defining variable for the time now and start time for calculation
       var now = moment().format("HH:mm");
       var then = snap.val().startTime;
 
@@ -90,7 +90,19 @@ $(document).ready(function() {
       //calculation of minutes to wait until train arrives
       var minAway =
         snap.val().frequency - (timeDiffToNowInMinutes % snap.val().frequency);
-      var minAwayTD = "<td>" + minAway + "</td>";
+      console.log(minAway);
+      var textmsg = "";
+      var minAwayTD = "";
+      function minAwayZero() {
+        if (minAway == snap.val().frequency) {
+          textmsg = "Boarding Now";
+          minAwayTD = `<td><span class="blink">${textmsg}</span></td>`;
+        } else {
+          textmsg = minAway;
+          minAwayTD = `<td>${textmsg}</td>`;
+        }
+      }
+      minAwayZero();
 
       // Create delete button
       var delButton = $("<button>");
@@ -98,6 +110,7 @@ $(document).ready(function() {
       delButton.attr("data-delete", snap.ref.key);
       delButton.text("X");
 
+      //Appending data onto table by row
       row.attr("id", snap.ref.key);
       row.append(nameTD);
       row.append(destTD);
@@ -107,6 +120,9 @@ $(document).ready(function() {
       row.append(minAwayTD);
       row.append(delButton);
       table.append(row);
+
+      //Blink 'boarding now' msg for trains that have arrived
+      $(".blink").blink({ delay: 500 });
     },
     function(error) {}
   );
