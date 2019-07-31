@@ -1,4 +1,5 @@
 $(document).ready(function() {
+  //To specifically allow military time format entry for start time
   $(".timepicker").timepicker({
     timeFormat: "HH:mm",
     interval: 60,
@@ -13,7 +14,9 @@ $(document).ready(function() {
   console.log("connected");
 
   var database = firebase.database();
+  var localArray = [];
 
+  //Submit button triggers all input fields to be stored in Firebase
   $("#submitButton").on("click", function() {
     var name = $("#nameInput").val();
     var destination = $("#destInput").val();
@@ -34,38 +37,23 @@ $(document).ready(function() {
     $("#freqInput").val("");
   });
 
+  //Delete button on click causes removal in Firebase
   $(document).on("click", ".btn-warning", function() {
     console.log(this);
     var recordID = $(this).attr("data-delete");
     database.ref(recordID).remove();
   });
 
-  function getTimeFromMins(mins) {
-    // do not include the first validation check if you want, for example,
-    // getTimeFromMins(1530) to equal getTimeFromMins(90) (i.e. mins rollover)
-    if (mins >= 24 * 60 || mins < 0) {
-      throw new RangeError(
-        "Valid input should be greater than or equal to 0 and less than 24hrs."
-      );
-    }
-    var h = (mins / 60) | 0,
-      m = mins % 60 | 0;
-    return moment
-      .utc()
-      .hours(h)
-      .minutes(m)
-      .format("HH:mm");
-  }
-
+  //On child added in Firebase, construct row on schedule
   database.ref().on(
     "child_added",
-    function(snap) {
+    function buildTable(snap) {
       //defining variable for physical table building
       var table = $("#tableData");
       var row = $("<tr>");
 
       //defining variable for the time now and start time for calculation
-      var now = moment("2019-07-31T15:17:00").format("HH:mm");
+      var now = moment().format("HH:mm");
       var then = snap.val().startTime;
 
       //defining the table data elements
@@ -85,7 +73,7 @@ $(document).ready(function() {
       var nextArr = moment(
         moment(then, "HH:mm").add(nextArrMultiple, "minutes")
       ).format("HH:mm");
-      var nextArrTD = "<td>" + nextArr + "</td>";
+      var nextArrTD = `<td class="nA${snap.ref.key}">${nextArr}</td>`;
 
       //calculation of minutes to wait until train arrives
       var minAway =
@@ -96,12 +84,14 @@ $(document).ready(function() {
       function minAwayZero() {
         if (minAway == snap.val().frequency) {
           textmsg = "Boarding Now";
-          minAwayTD = `<td><span class="${
+          minAwayTD = `<td class="mA${snap.ref.key}"><span class="${
             snap.ref.key
           }">${textmsg}</span></td>`;
         } else {
           textmsg = minAway;
-          minAwayTD = `<td>${textmsg}</td>`;
+          minAwayTD = `<td class="mA${snap.ref.key}"><span class="${
+            snap.ref.key
+          }">${textmsg}</span></td>`;
         }
       }
       minAwayZero();
@@ -124,13 +114,72 @@ $(document).ready(function() {
       table.append(row);
 
       //Blink 'boarding now' msg for trains that have arrived
-      $("." + snap.ref.key).blink({ delay: 500 });
+      if (textmsg === "Boarding Now") {
+        $("." + snap.ref.key).blink({ delay: 500 });
+      }
+
+      var fireObject = snap.val();
+      fireObject.key = snap.ref.key; //adding key identifier into object
+      localArray.push(fireObject);
+      console.log(localArray);
     },
     function(error) {}
   );
 
+  //Firebase record removal triggers removal of row from schedule
   database.ref().on("child_removed", function(snap) {
     var recordID = snap.ref.key;
     $("#" + recordID).remove();
   });
+
+  //function used to update schedule every minute. Code repeated from buildTable()
+  function updateTime() {
+    for (i = 0; i < localArray.length; i++) {
+      var updateKey = localArray[i].key; //used to identify which train to update
+      var freq = localArray[i].frequency;
+
+      now = moment().format("HH:mm");
+      then = localArray[i].startTime;
+      timeDiffToNow = moment
+        .utc(moment(now, "HH:mm").diff(moment(then, "HH:mm")))
+        .format("HH:mm");
+      timeDiffToNowInMinutes = moment.duration(timeDiffToNow).asMinutes();
+      nextArrMultiple = Math.ceil(timeDiffToNowInMinutes / freq) * freq;
+      nextArr = moment(
+        moment(then, "HH:mm").add(nextArrMultiple, "minutes")
+      ).format("HH:mm");
+      $(".nA" + updateKey).html(nextArr); //this homes in to the exact td for update
+
+      console.log("Train" + i + ":" + then + "," + freq + "," + nextArr);
+      minAway = freq - (timeDiffToNowInMinutes % freq);
+      function minAwayZeroUpdate() {
+        if (minAway == freq) {
+          textmsg = "Boarding Now";
+          $("." + updateKey).text(textmsg); //this hones in to the exact td for update
+        } else {
+          textmsg = minAway;
+          $("." + updateKey).text(textmsg);
+        }
+      }
+      $("." + updateKey).unblink(); //clears any prior blinking function to prevent stacking
+      minAwayZeroUpdate();
+      if (textmsg === "Boarding Now") {
+        $("." + updateKey).blink({ delay: 500 });
+      }
+    }
+  }
+
+  setInterval(updateTime, 60000); //updates schedule every minute
+
+  function findWithAttr(array, attr, value) {
+    for (var i = 0; i < array.length; i += 1) {
+      if (array[i][attr] == value) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  var whereisBusan = findWithAttr(localArray, "frequency", "1");
+  console.log(whereisBusan);
 });
