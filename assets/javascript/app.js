@@ -130,6 +130,9 @@ $(document).ready(function() {
   database.ref().on("child_removed", function(snap) {
     var recordID = snap.ref.key;
     $("#" + recordID).remove();
+    var indexToBeDeleted = findWithAttr(localArray, "key", recordID);
+    localArray.splice(indexToBeDeleted, 1);
+    console.log(localArray);
   });
 
   //function used to update schedule every minute. Code repeated from buildTable()
@@ -179,7 +182,4 @@ $(document).ready(function() {
     }
     return -1;
   }
-
-  var whereisBusan = findWithAttr(localArray, "frequency", "1");
-  console.log(whereisBusan);
 });
