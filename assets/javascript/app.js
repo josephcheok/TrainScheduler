@@ -15,6 +15,7 @@ $(document).ready(function() {
 
   var database = firebase.database();
   var localArray = [];
+  var audio = new Audio("./ChooChoo.mp3");
 
   //Submit button triggers all input fields to be stored in Firebase
   $("#submitButton").on("click", function() {
@@ -81,20 +82,38 @@ $(document).ready(function() {
       console.log(minAway);
       var textmsg = "";
       var minAwayTD = "";
+
       function minAwayZero() {
         if (minAway == snap.val().frequency) {
           textmsg = "Boarding Now";
-          minAwayTD = `<td class="mA${snap.ref.key}"><span class="${
+          minAwayTD = `<td><span class="${
             snap.ref.key
           }">${textmsg}</span></td>`;
+          audio.play();
+          // var audio = $("<iframe>");
+          // audio.attr("src", "ChooChoo.mp3");
+          // audio.attr("style", "display:none");
+          // audio.attr("id", "iframeAudio");
+          // audio.attr("allow", "autoplay");
+          // audio.remove();
         } else {
           textmsg = minAway;
-          minAwayTD = `<td class="mA${snap.ref.key}"><span class="${
+          minAwayTD = `<td><span class="${
             snap.ref.key
           }">${textmsg}</span></td>`;
         }
       }
       minAwayZero();
+
+      var alterTD = `<td><span id="eD${snap.ref.key}"></span><span id="dE${
+        snap.ref.key
+      }"></span></td>`;
+
+      // Create edi button
+      var editLink = $("<a>");
+      editLink.attr("data-edit", snap.ref.key);
+      editLink.attr("href", "#");
+      editLink.text("Edit");
 
       // Create delete button
       var delButton = $("<button>");
@@ -110,8 +129,10 @@ $(document).ready(function() {
       row.append(freqTD);
       row.append(nextArrTD);
       row.append(minAwayTD);
-      row.append(delButton);
+      row.append(alterTD);
       table.append(row);
+      $("#eD" + snap.ref.key).append(editLink);
+      $("#dE" + snap.ref.key).append(delButton);
 
       //Blink 'boarding now' msg for trains that have arrived
       if (textmsg === "Boarding Now") {
@@ -159,6 +180,7 @@ $(document).ready(function() {
         if (minAway == freq) {
           textmsg = "Boarding Now";
           $("." + updateKey).text(textmsg); //this hones in to the exact td for update
+          audio.play();
         } else {
           textmsg = minAway;
           $("." + updateKey).text(textmsg);
@@ -173,6 +195,9 @@ $(document).ready(function() {
   }
 
   setInterval(updateTime, 60000); //updates schedule every minute
+
+  var audio = new Audio("ChooChoo.mp3");
+  audio.play();
 
   function findWithAttr(array, attr, value) {
     for (var i = 0; i < array.length; i += 1) {

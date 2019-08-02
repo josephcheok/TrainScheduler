@@ -28,3 +28,18 @@ div.form-group label {
 .form-group {
   margin: 0 10px;
 }
+
+.btn-warning {
+  margin-left: 15px;
+  padding: 5px 7px;
+  font-size: 0.7em;
+  font-weight: 900;
+}
+
+a {
+  text-decoration: underline;
+}
+
+a:hover {
+  color: blue;
+}
