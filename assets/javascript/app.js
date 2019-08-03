@@ -58,10 +58,12 @@ $(document).ready(function() {
       var then = snap.val().startTime;
 
       //defining the table data elements
-      var nameTD = "<td>" + snap.val().name + "</td>";
-      var destTD = "<td>" + snap.val().destination + "</td>";
-      var startTimeTD = "<td>" + snap.val().startTime + "</td>";
-      var freqTD = "<td>" + snap.val().frequency + "</td>";
+      var nameTD = `<td id="n${snap.ref.key}">${snap.val().name}</td>`;
+      var destTD = `<td id="d${snap.ref.key}">${snap.val().destination}</td>`;
+      var startTimeTD = `<td id="s${snap.ref.key}">${
+        snap.val().startTime
+      }</td>`;
+      var freqTD = `<td id="f${snap.ref.key}">${snap.val().frequency}</td>`;
 
       //calculation of next train arrival time
       var timeDiffToNow = moment
@@ -90,12 +92,6 @@ $(document).ready(function() {
             snap.ref.key
           }">${textmsg}</span></td>`;
           audio.play();
-          // var audio = $("<iframe>");
-          // audio.attr("src", "ChooChoo.mp3");
-          // audio.attr("style", "display:none");
-          // audio.attr("id", "iframeAudio");
-          // audio.attr("allow", "autoplay");
-          // audio.remove();
         } else {
           textmsg = minAway;
           minAwayTD = `<td><span class="${
@@ -111,6 +107,7 @@ $(document).ready(function() {
 
       // Create edi button
       var editLink = $("<a>");
+      editLink.addClass("edit");
       editLink.attr("data-edit", snap.ref.key);
       editLink.attr("href", "#");
       editLink.text("Edit");
@@ -196,8 +193,78 @@ $(document).ready(function() {
 
   setInterval(updateTime, 60000); //updates schedule every minute
 
-  var audio = new Audio("ChooChoo.mp3");
-  audio.play();
+  // Populate input boxes with localArray values on clicking 'Edit'
+  $(document).on("click", ".edit", function() {
+    console.log(this);
+    var recordID = $(this).attr("data-edit");
+    var indexToBeEdited = findWithAttr(localArray, "key", recordID);
+    var nameTemp = localArray[indexToBeEdited].name;
+    var destinationTemp = localArray[indexToBeEdited].destination;
+    var startTimeTemp = localArray[indexToBeEdited].startTime;
+    var frequencyTemp = localArray[indexToBeEdited].frequency;
+    $("#nameInput").val(nameTemp);
+    $("#destInput").val(destinationTemp);
+    $("#timeInput").val(startTimeTemp);
+    $("#freqInput").val(frequencyTemp);
+    $("#submitButton").hide();
+    $("#savechangesButton").show();
+
+    $("#savechangesButton").on("click", function() {
+      //Update localArray
+      localArray[indexToBeEdited].name = $("#nameInput").val();
+      localArray[indexToBeEdited].destination = $("#destInput").val();
+      localArray[indexToBeEdited].startTime = $("#timeInput").val();
+      localArray[indexToBeEdited].frequency = $("#freqInput").val();
+      //Update table
+      $("#n" + recordID).text($("#nameInput").val());
+      $("#d" + recordID).text($("#destInput").val());
+      $("#s" + recordID).text($("#timeInput").val());
+      $("#f" + recordID).text($("#freqInput").val());
+      //Update Firebase
+      database.ref(recordID).set({
+        name: $("#nameInput").val(),
+        destination: $("#destInput").val(),
+        startTime: $("#timeInput").val(),
+        frequency: $("#freqInput").val(),
+        dateAdded: firebase.database.ServerValue.TIMESTAMP
+      });
+      //Recalculate time
+      var freq = localArray[indexToBeEdited].frequency;
+      now = moment().format("HH:mm");
+      then = localArray[indexToBeEdited].startTime;
+      timeDiffToNow = moment
+        .utc(moment(now, "HH:mm").diff(moment(then, "HH:mm")))
+        .format("HH:mm");
+      timeDiffToNowInMinutes = moment.duration(timeDiffToNow).asMinutes();
+      nextArrMultiple = Math.ceil(timeDiffToNowInMinutes / freq) * freq;
+      nextArr = moment(
+        moment(then, "HH:mm").add(nextArrMultiple, "minutes")
+      ).format("HH:mm");
+      $(".nA" + recordID).html(nextArr); //this homes in to the exact td for update
+      minAway = freq - (timeDiffToNowInMinutes % freq);
+      function minAwayZeroEdit() {
+        if (minAway == freq) {
+          textmsg = "Boarding Now";
+          $("." + recordID).text(textmsg); //this hones in to the exact td for update
+          audio.play();
+        } else {
+          textmsg = minAway;
+          $("." + recordID).text(textmsg);
+        }
+      }
+      $("." + recordID).unblink(); //clears any prior blinking function to prevent stacking
+      minAwayZeroEdit();
+      if (textmsg === "Boarding Now") {
+        $("." + recordID).blink({ delay: 500 });
+      }
+      $("#savechangesButton").hide();
+      $("#submitButton").show();
+      $("#nameInput").val("");
+      $("#destInput").val("");
+      $("#timeInput").val("");
+      $("#freqInput").val("");
+    });
+  });
 
   function findWithAttr(array, attr, value) {
     for (var i = 0; i < array.length; i += 1) {
@@ -207,4 +274,63 @@ $(document).ready(function() {
     }
     return -1;
   }
+
+  // function writeUserData(
+  //   recordID,
+  //   indexToBeEdited,
+  //   nameTemp,
+  //   destinationTemp,
+  //   startTimeTemp,
+  //   frequencyTemp
+  // ) {
+  //   //Update firebase
+  //   database.ref(recordID).set({
+  //     name: nameTemp,
+  //     destination: destinationTemp,
+  //     startTime: startTimeTemp,
+  //     frequency: frequencyTemp,
+  //     dateAdded: firebase.database.ServerValue.TIMESTAMP
+  //   });
+  //   //Update localArray
+  //   localArray[indexToBeEdited].name = $("#nameInput").val();
+  //   localArray[indexToBeEdited].destination = $("#destInput").val();
+  //   localArray[indexToBeEdited].startTime = $("#timeInput").val();
+  //   localArray[indexToBeEdited].frequency = $("#freqInput").val();
+  //   //Update table
+  //   $("#n" + recordID).text($("#nameInput").val());
+  //   $("#d" + recordID).text($("#destInput").val());
+  //   $("#s" + recordID).text($("#timeInput").val());
+  //   $("#f" + recordID).text($("#freqInput").val());
+  //   //Recalculate time
+  //   var freq = localArray[indexToBeEdited].frequency;
+  //   now = moment().format("HH:mm");
+  //   then = localArray[indexToBeEdited].startTime;
+  //   timeDiffToNow = moment
+  //     .utc(moment(now, "HH:mm").diff(moment(then, "HH:mm")))
+  //     .format("HH:mm");
+  //   timeDiffToNowInMinutes = moment.duration(timeDiffToNow).asMinutes();
+  //   nextArrMultiple = Math.ceil(timeDiffToNowInMinutes / freq) * freq;
+  //   nextArr = moment(
+  //     moment(then, "HH:mm").add(nextArrMultiple, "minutes")
+  //   ).format("HH:mm");
+  //   $(".nA" + recordID).html(nextArr); //this homes in to the exact td for update
+  //   minAway = freq - (timeDiffToNowInMinutes % freq);
+  //   function minAwayZeroEdit() {
+  //     if (minAway == freq) {
+  //       textmsg = "Boarding Now";
+  //       $("." + recordID).text(textmsg); //this hones in to the exact td for update
+  //       audio.play();
+  //     } else {
+  //       textmsg = minAway;
+  //       $("." + recordID).text(textmsg);
+  //     }
+  //   }
+  //   $("." + recordID).unblink(); //clears any prior blinking function to prevent stacking
+  //   minAwayZeroEdit();
+  //   if (textmsg === "Boarding Now") {
+  //     $("." + recordID).blink({ delay: 500 });
+  //   }
+
+  //   $("#submitButton").show();
+  // }
 });

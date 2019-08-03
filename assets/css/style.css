@@ -6,9 +6,14 @@ div.form-group label {
   margin-top: 15px;
 }
 
-#submitButton {
+#submitButton,
+#savechangesButton {
   float: right;
   margin: 10px 10px;
+}
+
+#savechangesButton {
+  display: none;
 }
 
 .card {
