@@ -196,8 +196,8 @@ $(document).ready(function() {
   // Populate input boxes with localArray values on clicking 'Edit'
   $(document).on("click", ".edit", function() {
     console.log(this);
-    var recordID = $(this).attr("data-edit");
-    var indexToBeEdited = findWithAttr(localArray, "key", recordID);
+    recordID = $(this).attr("data-edit");
+    indexToBeEdited = findWithAttr(localArray, "key", recordID);
     var nameTemp = localArray[indexToBeEdited].name;
     var destinationTemp = localArray[indexToBeEdited].destination;
     var startTimeTemp = localArray[indexToBeEdited].startTime;
@@ -209,7 +209,8 @@ $(document).ready(function() {
     $("#submitButton").hide();
     $("#savechangesButton").show();
 
-    $("#savechangesButton").on("click", function() {
+    $("#savechangesButton").on("click", function(event) {
+      event.preventDefault();
       //Update localArray
       localArray[indexToBeEdited].name = $("#nameInput").val();
       localArray[indexToBeEdited].destination = $("#destInput").val();
@@ -228,6 +229,7 @@ $(document).ready(function() {
         frequency: $("#freqInput").val(),
         dateAdded: firebase.database.ServerValue.TIMESTAMP
       });
+
       //Recalculate time
       var freq = localArray[indexToBeEdited].frequency;
       now = moment().format("HH:mm");
@@ -257,12 +259,11 @@ $(document).ready(function() {
       if (textmsg === "Boarding Now") {
         $("." + recordID).blink({ delay: 500 });
       }
+      //Recalculate time section over
+
       $("#savechangesButton").hide();
       $("#submitButton").show();
-      $("#nameInput").val("");
-      $("#destInput").val("");
-      $("#timeInput").val("");
-      $("#freqInput").val("");
+      // $("#form")[0].reset();
     });
   });
 
@@ -274,63 +275,4 @@ $(document).ready(function() {
     }
     return -1;
   }
-
-  // function writeUserData(
-  //   recordID,
-  //   indexToBeEdited,
-  //   nameTemp,
-  //   destinationTemp,
-  //   startTimeTemp,
-  //   frequencyTemp
-  // ) {
-  //   //Update firebase
-  //   database.ref(recordID).set({
-  //     name: nameTemp,
-  //     destination: destinationTemp,
-  //     startTime: startTimeTemp,
-  //     frequency: frequencyTemp,
-  //     dateAdded: firebase.database.ServerValue.TIMESTAMP
-  //   });
-  //   //Update localArray
-  //   localArray[indexToBeEdited].name = $("#nameInput").val();
-  //   localArray[indexToBeEdited].destination = $("#destInput").val();
-  //   localArray[indexToBeEdited].startTime = $("#timeInput").val();
-  //   localArray[indexToBeEdited].frequency = $("#freqInput").val();
-  //   //Update table
-  //   $("#n" + recordID).text($("#nameInput").val());
-  //   $("#d" + recordID).text($("#destInput").val());
-  //   $("#s" + recordID).text($("#timeInput").val());
-  //   $("#f" + recordID).text($("#freqInput").val());
-  //   //Recalculate time
-  //   var freq = localArray[indexToBeEdited].frequency;
-  //   now = moment().format("HH:mm");
-  //   then = localArray[indexToBeEdited].startTime;
-  //   timeDiffToNow = moment
-  //     .utc(moment(now, "HH:mm").diff(moment(then, "HH:mm")))
-  //     .format("HH:mm");
-  //   timeDiffToNowInMinutes = moment.duration(timeDiffToNow).asMinutes();
-  //   nextArrMultiple = Math.ceil(timeDiffToNowInMinutes / freq) * freq;
-  //   nextArr = moment(
-  //     moment(then, "HH:mm").add(nextArrMultiple, "minutes")
-  //   ).format("HH:mm");
-  //   $(".nA" + recordID).html(nextArr); //this homes in to the exact td for update
-  //   minAway = freq - (timeDiffToNowInMinutes % freq);
-  //   function minAwayZeroEdit() {
-  //     if (minAway == freq) {
-  //       textmsg = "Boarding Now";
-  //       $("." + recordID).text(textmsg); //this hones in to the exact td for update
-  //       audio.play();
-  //     } else {
-  //       textmsg = minAway;
-  //       $("." + recordID).text(textmsg);
-  //     }
-  //   }
-  //   $("." + recordID).unblink(); //clears any prior blinking function to prevent stacking
-  //   minAwayZeroEdit();
-  //   if (textmsg === "Boarding Now") {
-  //     $("." + recordID).blink({ delay: 500 });
-  //   }
-
-  //   $("#submitButton").show();
-  // }
 });
