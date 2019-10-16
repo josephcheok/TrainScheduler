@@ -105,7 +105,7 @@ $(document).ready(function() {
         snap.ref.key
       }"></span></td>`;
 
-      // Create edi button
+      // Create edit button
       var editLink = $("<a>");
       editLink.addClass("edit");
       editLink.attr("data-edit", snap.ref.key);

@@ -70,7 +70,7 @@
         <div class="card-header">
           Add Train
         </div>
-        <form id="form">
+        <form id="form" onsubmit="return false">
           <div class="form-group">
             <label for="nameInput">Train Name</label>
             <input
@@ -105,10 +105,10 @@
               placeholder="minutes"
             />
           </div>
-          <button type="button" class="btn btn-primary" id="submitButton">
+          <button type="submit" class="btn btn-primary" id="submitButton">
             Submit
           </button>
-          <button type="button" class="btn btn-info" id="savechangesButton">
+          <button type="submit" class="btn btn-info" id="savechangesButton">
             Save Changes
           </button>
         </form>
